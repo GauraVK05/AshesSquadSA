@@ -1,0 +1,98 @@
+---
+title: "Ashes Squad selection"
+author: "Gaurav Kumar"
+date: "November 17, 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+
+```{r libraries}
+
+suppressMessages(library(twitteR))
+suppressMessages(library(ggplot2)) # Data visualization
+suppressMessages(library(readr)) # CSV file I/O, e.g. the read_csv function
+suppressMessages(library(tm))
+suppressMessages(library(wordcloud))
+suppressMessages(library(plyr))
+suppressMessages(library(lubridate))
+suppressMessages(library(syuzhet))
+suppressMessages(library(dplyr))
+
+```
+
+The 13 man squad for first ashes test 2017-18 was confirmed early Friday morning.
+
+Paine's selection is one of the greatest surprise beating his Tasmania teammate out of form Matthew Wade and the NSW's Peter Nevill.Paine scored his lone first class hundred in 2006 (Aussie coach Darren Lehmann scored a more recent one in 2007) and wasn't even in Tasmania's best XI to start the Sheffield Shield season.
+
+"Tim was identified as an international player a long time ago and has always been renowned as a very good gloveman, also performing well for us whenever he has represented Australia in any format," chairman of selectors Trevor Hohns said.
+
+Apart from Paine Shaun Marsh was selected ahead of Maxwell,Hilton Cartwright for No. 6 position.
+
+Consistentent Cameron Bancroft earned his place to open alongside David warner scoring a double-century earlier this week and is set to debut in Gabba test.
+
+![](C:/Users/Gaurav kumar/Desktop/Sentiment Analysis/Ashes/Ashes.png)
+
+```{r Authentication , results='hide'}
+consumerKey = "9Id1txLjk6dgLXBpKmGdmZyQZ"
+consumerSecret = "dkqmkJPSpxTOu37BzU72sgw2voNnJ4E60svPxF72RVuB8HRmCc"
+accessToken = "3322668499-EhOWSxus3E5irGQ7yEJieufIWPfA4Q3fbwYNq1P"
+accessTokenSecret = "iPgUyYTZcLZrjlXlKGHKP95f3TNQASsy0YGFs9yNwPN9C"
+invisible(setup_twitter_oauth (consumerKey, consumerSecret, accessToken,           
+                                      accessTokenSecret))
+```
+
+```{r }
+tweets <- searchTwitter(c("#Ashes","squad"), n=2500)
+tweetsDF <- twListToDF(tweets)
+```
+
+
+```{r }
+Text_preprocessing <- function(some_txt) {
+  
+  some_txt<-gsub("(RT|via)((?:\\b\\w*@\\w+)+)","",some_txt) #Remove RT
+  some_txt<-gsub("http[^[:blank:]]+","",some_txt)
+  some_txt<-gsub("@\\w+","",some_txt)
+  some_txt<-gsub("[[:punct:]]"," ",some_txt)
+  some_txt<-gsub("[^[:alnum:]]"," ",some_txt)
+  
+  return(some_txt)
+}
+
+
+some_txt <- Text_preprocessing(tweetsDF$text)
+```
+
+```{r }
+myCorpus = Corpus(VectorSource(some_txt))
+myCorpus = tm_map(myCorpus, content_transformer(tolower))
+myCorpus = tm_map(myCorpus, removeWords, c(stopwords("english"),"ashes","squad",
+                                           "australia","australian","tests","test",
+                                           "first","two","england","cricket"))
+myDTM = TermDocumentMatrix(myCorpus, control = list(minWordLength = 10))
+m = as.matrix(myDTM)
+v = sort(rowSums(m), decreasing = TRUE)
+set.seed(1600)
+wordcloud(names(v), v, min.freq = 50)
+
+```
+
+```{r }
+tweet1Sentiment <- get_nrc_sentiment(some_txt)
+
+barplot(
+  sort(colSums(prop.table(tweet1Sentiment[, 1:10]))), 
+  horiz = TRUE, 
+  cex.names = 0.7, 
+  las = 1, 
+  main = "Emotions in Tweets text", xlab="Percentage"
+)
+
+
+```
